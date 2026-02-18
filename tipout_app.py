@@ -1,101 +1,136 @@
 import streamlit as st
+import pandas as pd
 
-st.title("Le Petit Tipout Calculator")
-st.markdown("Enter shift data below. All amounts pre-tax, excludes hourly.")
+# Set page configuration
+st.set_page_config(
+    page_title="Le Petit Marcel - Tip Calculator",
+    page_icon="🍷",
+    layout="centered"
+)
 
-col1, col2 = st.columns(2)
+# Custom CSS for a clean, professional look
+st.markdown("""
+    <style>
+    .main {
+        background-color: #f8f9fa;
+    }
+    .stNumberInput > div > div > input {
+        background-color: #ffffff;
+    }
+    .report-card {
+        padding: 20px;
+        border-radius: 10px;
+        background-color: #ffffff;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+    .metric-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    .metric-value {
+        color: #212529;
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+    .total-value {
+        color: #1a73e8;
+        font-size: 2rem;
+        font-weight: bold;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
-with col1:
-    non_cash_servers = st.number_input("Non-cash tip (servers total)", min_value=0.0, value=2187.00, step=0.01)
-    bev_sales = st.number_input("Bev/Liquor/Soft Drinks sales (total)", min_value=0.0, value=2300.85, step=0.01)
-    wine_sales = st.number_input("Wine BTG+BTL sales (total)", min_value=0.0, value=1475.00, step=0.01)
-    non_cash_bar = st.number_input("Non-cash tip (bar)", min_value=0.0, value=820.96, step=0.01)
-    food_cost = st.number_input("Total food cost (for expo)", min_value=0.0, value=1148.75, step=0.01)
+def main():
+    st.title("🍷 Le Petit Marcel")
+    st.subheader("Shift Tip Calculator")
+    st.write("Enter your sales data from the Toast summary to calculate your final payout.")
 
-with col2:
-    server_points_str = st.text_input("Server points (e.g. Bryan=2, Riley=2, Saige=2, Roxy=1.5)", 
-                                     value="Bryan=2, Riley=2, Saige=2, Roxy=1.5")
-    num_bussers = st.number_input("Number of bussers", min_value=0, value=3, step=1)
-    barback = st.selectbox("Barback working?", ["No", "Yes"])
-    sum_expo_bussers = st.selectbox("Sum Expo with Bussers payout?", ["No", "Yes"])
+    # --- INPUT SECTION ---
+    with st.container():
+        st.markdown('<div class="report-card">', unsafe_allow_html=True)
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("### 💰 Tips & Beverage Sales")
+            non_cash_tips = st.number_input("Total Non-cash Tips ($)", min_value=0.0, step=0.01, format="%.2f")
+            bev_sales = st.number_input("Bev/Liquor/Soft Drinks Sales ($)", min_value=0.0, step=0.01, format="%.2f")
+            wine_sales = st.number_input("Wine BTL+GLS Sales ($)", min_value=0.0, step=0.01, format="%.2f")
+            
+        with col2:
+            st.markdown("### 🍱 Food Sales")
+            food_sales = st.number_input("Total Food Cost/Sales ($)", min_value=0.0, step=0.01, format="%.2f")
+            st.markdown("---")
+            st.info("The calculator applies the standard house rules: 10% Bar (Bev), 2% Bar (Wine), and 3% Expo (Food).")
+        st.markdown('</div>', unsafe_allow_html=True)
 
-if st.button("Calculate Tipout"):
-    try:
-        # Parse server points
-        server_points = {}
-        total_server_pts = 0.0
-        for pair in server_points_str.split(','):
-            if '=' in pair:
-                name, pts_str = pair.strip().split('=')
-                pts = float(pts_str)
-                server_points[name.strip()] = pts
-                total_server_pts += pts
+    # --- CALCULATIONS ---
+    # House Keeps (2.5% of non-cash tips as seen in your sheets)
+    house_keeps = non_cash_tips * 0.025
+    net_tips = non_cash_tips - house_keeps
+    
+    # Bar Tip-outs
+    bar_tip_out_bev = bev_sales * 0.10
+    bar_tip_out_wine = wine_sales * 0.02
+    total_to_bar = bar_tip_out_bev + bar_tip_out_wine
+    
+    # Expo Tip-out (3% of food)
+    expo_final = food_sales * 0.03
+    
+    # Split Total (Logic from your sheet: Tips - Bar Tipout)
+    split_total = net_tips - total_to_bar
+    
+    # Final Payout (Simplification of your 2.0 vs 0.6 point system for a solo calculator)
+    # Typically, the server keeps their share of the split total.
+    # In your sheet, Server Final = Split Total / Total Pts * 2.0
+    # Assuming standard shift: 1 Server (2pts), 1 Busser (0.6pts based on sheet logic)
+    total_pts = 2.6
+    server_final = (split_total / total_pts * 2.0) if split_total > 0 else 0
+    busser_final = (split_total / total_pts * 0.6) if split_total > 0 else 0
 
-        busser_pts_per = 0.6
-        total_busser_pts = num_bussers * busser_pts_per
-        total_points = total_server_pts + total_busser_pts
+    # --- OUTPUT SECTION ---
+    st.markdown("### 📊 Distribution Breakdown")
+    
+    res_col1, res_col2, res_col3 = st.columns(3)
+    
+    with res_col1:
+        st.markdown(f"""
+            <div class="report-card">
+                <p class="metric-label">To Bar</p>
+                <p class="metric-value">${total_to_bar:,.2f}</p>
+                <small>(10% Bev + 2% Wine)</small>
+            </div>
+        """, unsafe_allow_html=True)
+        
+    with res_col2:
+        st.markdown(f"""
+            <div class="report-card">
+                <p class="metric-label">To Expo</p>
+                <p class="metric-value">${expo_final:,.2f}</p>
+                <small>(3% of Food Sales)</small>
+            </div>
+        """, unsafe_allow_html=True)
 
-        if total_points == 0:
-            st.error("Total points cannot be zero.")
-            st.stop()
+    with res_col3:
+        st.markdown(f"""
+            <div class="report-card">
+                <p class="metric-label">To Busser</p>
+                <p class="metric-value">${busser_final:,.2f}</p>
+                <small>(Point-weighted split)</small>
+            </div>
+        """, unsafe_allow_html=True)
 
-        # Core calcs - Server/Busser side
-        net_server_tips = non_cash_servers * 0.975
-        bar_tip_out = (bev_sales * 0.10) + (wine_sales * 0.02)
-        split_total = net_server_tips - bar_tip_out
-        per_point = round(split_total / total_points, 2)
+    st.markdown(f"""
+        <div class="report-card" style="text-align: center; border: 2px solid #1a73e8;">
+            <p class="metric-label" style="font-size: 1.2rem;">Server Take-Home (Net)</p>
+            <p class="total-value">${server_final:,.2f}</p>
+            <p style="color: #6c757d;">Calculated after all tip-outs and house fees.</p>
+        </div>
+    """, unsafe_allow_html=True)
 
-        # Servers
-        server_results = []
-        total_server_final = 0.0
-        for name, pts in server_points.items():
-            amt = round(pts * per_point, 2)
-            server_results.append(f"{name}: **${amt:,.2f}**")
-            total_server_final += amt
+    # Footer note
+    st.markdown("---")
+    st.caption("Note: Amounts shown are pre-tax and do not include hourly wages. Formula based on Le Petit Marcel standard reporting logic.")
 
-        # Bussers
-        busser_per = round(busser_pts_per * per_point, 2)
-        total_busser = round(total_busser_pts * per_point, 2)
-
-        # Expo
-        expo = round(food_cost * 0.03, 2)
-
-        # Bar side - NOW subtract expo BEFORE barback (per your sheet)
-        net_bar = non_cash_bar * 0.975
-        bar_pool_before_deductions = net_bar + bar_tip_out
-        bar_pool_after_expo = bar_pool_before_deductions - expo  # <-- Key change: Expo subtracted here
-        barback_amt = round(bar_pool_after_expo * 0.20, 2) if barback == "Yes" else 0.0
-        solo_bar = round(bar_pool_after_expo - barback_amt, 2)  # Final "Solo Bar Final"
-
-        if sum_expo_bussers == "Yes":
-            total_busser += expo
-            busser_per = round(total_busser / num_bussers, 2) if num_bussers > 0 else 0
-
-        # Output
-        st.success("Calculation complete")
-        st.markdown("### Results")
-
-        st.markdown(f"**Server Final Amt**  \n" + "  \n".join(server_results) + f"  \n**Total Servers**: **${total_server_final:,.2f}**")
-
-        busser_text = f"${busser_per:,.2f} each" if num_bussers > 1 else f"${total_busser:,.2f}"
-        st.markdown(f"**Busser Final Amt**  \n{busser_text} / **Total**: **${total_busser:,.2f}**")
-
-        st.markdown(f"**Expo Final**: **${expo:,.2f}** (3% food cost)")
-
-        st.markdown(f"**Barback Final**: **${barback_amt:,.2f}**")
-
-        st.markdown(f"**Solo Bar Final** (pre-split for bartenders): **${solo_bar:,.2f}**")
-
-        st.markdown(f"**Verification**: Servers + Bussers ≈ **${total_server_final + total_busser:,.2f}** (split total)")
-
-        # Optional verification lines matching your sheet style
-        st.markdown("**Bar Pool Breakdown** (for debugging):")
-        st.markdown(f"- Bar tips + tip-out: **${bar_pool_before_deductions:,.2f}**")
-        st.markdown(f"- Minus Expo: **${bar_pool_after_expo:,.2f}**")
-        st.markdown(f"- Minus Barback (if any): **${solo_bar:,.2f}**")
-
-    except Exception as e:
-        st.error(f"Error: {str(e)}\nCheck input format (points like Name=number, comma separated).")
-
-st.markdown("---")
-st.caption("Le Petit Tipout System • 2.5% house fee • 10% bev + 2% wine to bar • 3% expo from food • 20% barback")
+if __name__ == "__main__":
+    main()
