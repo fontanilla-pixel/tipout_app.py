@@ -113,7 +113,7 @@ if st.button("Calculate Tipout", type="primary"):
         # --- PREPARE DATA FOR TABLE ---
         table_rows = []
         
-        # Add Server Rows
+        # Add EACH Server as a separate row
         for s in server_list:
             final_amt = s['pts'] * point_value
             table_rows.append({
@@ -156,6 +156,7 @@ if st.button("Calculate Tipout", type="primary"):
         # --- OUTPUT TABLE ---
         st.markdown("### 📋 Results Summary")
         df_results = pd.DataFrame(table_rows)
+        # We use st.table for a static, easy-to-read view
         st.table(df_results)
 
         # Verification
