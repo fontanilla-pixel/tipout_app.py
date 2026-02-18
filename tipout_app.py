@@ -56,7 +56,7 @@ with st.expander("👥 Staffing & Points", expanded=True):
         server_names_raw = st.text_input("Server Names (comma separated)", placeholder="Bryan, Riley, Saige")
         
         st.write("**Support Staff**")
-        head_busser_name = st.text_input("Head Busser Name (0.65 Pts)", placeholder="Name of Head Busser")
+        head_busser_names_raw = st.text_input("Head Busser Names (0.65 Pts each)", placeholder="Virgilio, Name2")
         num_bussers = st.number_input("Number of Standard Bussers (0.6 Pts Each)", min_value=0, step=1, value=1)
     
     with col4:
@@ -101,13 +101,15 @@ if st.button("Calculate Tipout", type="primary"):
                     final_server_list.append({'name': name.strip(), 'pts': pts})
                     total_floor_points += pts
         
-        # Handle Head Busser (0.65 pts)
-        has_head_busser = False
-        if head_busser_name.strip():
-            has_head_busser = True
-            total_floor_points += 0.65
+        # Handle Head Bussers (0.65 pts each)
+        head_busser_list = []
+        if head_busser_names_raw:
+            hb_names = [name.strip() for name in head_busser_names_raw.split(',') if name.strip()]
+            for name in hb_names:
+                head_busser_list.append(name)
+                total_floor_points += 0.65
             
-        # Handle Standard Bussers (0.6 pts)
+        # Handle Standard Bussers (0.6 pts each)
         busser_points_total = num_bussers * 0.6
         total_floor_points += busser_points_total
         
@@ -143,11 +145,11 @@ if st.button("Calculate Tipout", type="primary"):
                 "Notes": f"{s['pts']} points @ ${point_value:,.2f}/pt"
             })
             
-        # Head Busser Row
-        if has_head_busser:
+        # Head Busser Rows (Individual)
+        for hb_name in head_busser_list:
             head_busser_amt = 0.65 * point_value
             table_rows.append({
-                "Role/Person": f"Head Busser: {head_busser_name}",
+                "Role/Person": f"Head Busser: {hb_name}",
                 "Payout": f"${head_busser_amt:,.2f}",
                 "Notes": f"Seniority rate (0.65 pts)"
             })
