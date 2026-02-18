@@ -12,31 +12,30 @@ st.markdown("""
         background-color: #ffffff;
     }
     
-    /* Header Area */
-    .stApp header {
-        background-color: #800000;
-    }
-    
-    h1, h2, h3 {
+    /* Global Heading Colors - ensuring H1 through H6 are Maroon */
+    h1, h2, h3, h4, h5, h6 {
         color: #800000 !important;
         font-weight: 700 !important;
+        margin-bottom: 10px !important;
+    }
+    
+    /* Target the specific labels inside expanders that are bold */
+    .stMarkdown strong {
+        color: #800000;
     }
     
     .subheader-text {
-        color: #000000;
+        color: #444444;
         font-weight: 400;
         margin-bottom: 20px;
     }
 
     /* Cards and Expanders */
-    .st-emotion-cache-p4mowd {
-        border-color: #800000 !important;
-    }
-    
     div[data-testid="stExpander"] {
-        border: 1px solid #e0e0e0;
+        border: 1px solid #800000;
         border-radius: 8px;
         background-color: #ffffff;
+        margin-bottom: 15px;
     }
 
     /* Input Fields */
@@ -55,11 +54,13 @@ st.markdown("""
         width: 100% !important;
         border-radius: 8px !important;
         transition: 0.3s !important;
+        margin-top: 20px;
     }
     
     .stButton > button:hover {
         background: #000000 !important;
         color: white !important;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     }
 
     /* Table Styling */
@@ -70,13 +71,6 @@ st.markdown("""
     }
     
     /* Info box / Metric highlights */
-    .stMetric {
-        background-color: #f8f8f8;
-        padding: 15px;
-        border-radius: 10px;
-        border-left: 5px solid #800000;
-    }
-    
     .stInfo {
         background-color: #fff5f5 !important;
         color: #800000 !important;
@@ -86,19 +80,21 @@ st.markdown("""
     /* Custom divider */
     hr {
         border: 0;
-        height: 1px;
+        height: 2px;
         background: #800000;
         margin: 20px 0;
     }
     </style>
 """, unsafe_allow_html=True)
 
+# App Title Section
 st.markdown('<h1 style="text-align: center;">🍷 Le Petit Marcel</h1>', unsafe_allow_html=True)
 st.markdown('<p class="subheader-text" style="text-align: center;">Official Tip Distribution Calculator</p>', unsafe_allow_html=True)
 st.markdown("<hr>", unsafe_allow_html=True)
 
 # --- INPUT SECTION ---
-with st.expander("📊 Sales & Tips Input", expanded=True):
+st.markdown("### 📊 Sales & Tips Input")
+with st.expander("Enter Shift Sales Data", expanded=True):
     col1, col2 = st.columns(2)
     
     with col1:
@@ -110,22 +106,23 @@ with st.expander("📊 Sales & Tips Input", expanded=True):
         bar_tips_raw = st.number_input("Bar Non-Cash Tips ($)", min_value=0.0, step=0.01, format="%.2f")
         food_cost = st.number_input("Total Food Cost ($)", min_value=0.0, step=0.01, format="%.2f")
 
-with st.expander("👥 Staffing & Points", expanded=True):
+st.markdown("### 👥 Staffing & Points")
+with st.expander("Configure Staff on Shift", expanded=True):
     col3, col4 = st.columns(2)
     
     with col3:
-        st.write("**Standard Servers (2 Pts Each)**")
+        st.markdown("#### Standard Servers (2 Pts Each)")
         server_names_raw = st.text_input("Server Names (comma separated)", placeholder="Bryan, Riley, Saige")
         
-        st.write("**Support Staff**")
+        st.markdown("#### Support Staff")
         head_busser_names_raw = st.text_input("Head Busser Names (0.65 Pts each)", placeholder="Virgilio, Name2")
         num_bussers = st.number_input("Number of Standard Bussers (0.6 Pts Each)", min_value=0, step=1, value=1)
     
     with col4:
-        st.write("**Adjusted Servers (Manual Points)**")
+        st.markdown("#### Adjusted Servers (Manual Points)")
         adjustment_input = st.text_area("Non-standard Points (e.g., Roxy:1.5)", height=68, placeholder="Roxy:1.5, Sam:1")
         
-        st.write("**Bar Settings**")
+        st.markdown("#### Bar Settings")
         num_bartenders = st.number_input("Number of Bartenders", min_value=1, step=1, value=2)
         barback_working = st.checkbox("Barback Working? (20% Tipout)")
 
@@ -146,14 +143,12 @@ if st.button("Calculate Tipout", type="primary"):
         final_server_list = []
         total_floor_points = 0.0
         
-        # Handle Standard Servers (2 pts)
         if server_names_raw:
             standard_names = [name.strip() for name in server_names_raw.split(',') if name.strip()]
             for name in standard_names:
                 final_server_list.append({'name': name, 'pts': 2.0})
                 total_floor_points += 2.0
                 
-        # Handle Adjusted Servers (Custom pts)
         if adjustment_input:
             adj_entries = adjustment_input.replace('\n', ',').split(',')
             for item in adj_entries:
@@ -163,7 +158,6 @@ if st.button("Calculate Tipout", type="primary"):
                     final_server_list.append({'name': name.strip(), 'pts': pts})
                     total_floor_points += pts
         
-        # Handle Head Bussers (0.65 pts each)
         head_busser_list = []
         if head_busser_names_raw:
             hb_names = [name.strip() for name in head_busser_names_raw.split(',') if name.strip()]
@@ -171,7 +165,6 @@ if st.button("Calculate Tipout", type="primary"):
                 head_busser_list.append(name)
                 total_floor_points += 0.65
             
-        # Handle Standard Bussers (0.6 pts each)
         busser_points_total = num_bussers * 0.6
         total_floor_points += busser_points_total
         
@@ -188,17 +181,13 @@ if st.button("Calculate Tipout", type="primary"):
         bar_pool_pre = net_bar_tips + bar_tipout_from_servers
         bar_pool_after_expo = bar_pool_pre - expo_final
         
-        barback_final = 0.0
-        if barback_working:
-            barback_final = round(bar_pool_after_expo * 0.20, 2)
-            
+        barback_final = round(bar_pool_after_expo * 0.20, 2) if barback_working else 0.0
         solo_bar_final = round(bar_pool_after_expo - barback_final, 2)
         bartender_each = round(solo_bar_final / num_bartenders, 2) if num_bartenders > 0 else solo_bar_final
 
         # --- PREPARE DATA FOR TABLE ---
         table_rows = []
         
-        # Individual Server Payouts
         for s in final_server_list:
             final_amt = round(s['pts'] * point_value, 2)
             table_rows.append({
@@ -207,7 +196,6 @@ if st.button("Calculate Tipout", type="primary"):
                 "Notes": f"{s['pts']} points @ ${point_value:,.4f}/pt"
             })
             
-        # Head Busser Rows (Individual)
         for hb_name in head_busser_list:
             head_busser_amt = round(0.65 * point_value, 2)
             table_rows.append({
@@ -216,7 +204,6 @@ if st.button("Calculate Tipout", type="primary"):
                 "Notes": f"Seniority rate (0.65 pts)"
             })
 
-        # Standard Busser Row
         if num_bussers > 0:
             busser_final_each = round(0.6 * point_value, 2)
             table_rows.append({
@@ -225,14 +212,12 @@ if st.button("Calculate Tipout", type="primary"):
                 "Notes": f"Total: ${round(busser_final_each * num_bussers, 2):,.2f} (0.6 pts each)"
             })
             
-        # Expo Row
         table_rows.append({
             "Role/Person": "Expo Final",
             "Payout": f"${expo_final:,.2f}",
             "Notes": "3% of total food cost"
         })
         
-        # Barback Row
         if barback_working:
             table_rows.append({
                 "Role/Person": "Barback Final",
@@ -240,7 +225,6 @@ if st.button("Calculate Tipout", type="primary"):
                 "Notes": "20% deduction from bar pool"
             })
             
-        # Bartender Row
         table_rows.append({
             "Role/Person": "Solo Bar Total",
             "Payout": f"${solo_bar_final:,.2f}",
@@ -256,7 +240,7 @@ if st.button("Calculate Tipout", type="primary"):
         st.info(f"**Floor Pool Stats:** Raw Split Total: ${split_total:,.2f} | Total Points: {total_floor_points:.2f}")
 
     except Exception as e:
-        st.error(f"Error in calculation. Please check your formatting. Details: {e}")
+        st.error(f"Error in calculation: {e}")
 
 st.markdown("<br><hr>", unsafe_allow_html=True)
 st.caption("Le Petit Marcel Management Tools • Consistency = Professionalism")
