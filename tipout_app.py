@@ -24,6 +24,11 @@ st.markdown("""
     h1, h2, h3 {
         color: #2c3e50;
     }
+    /* Make the table look cleaner */
+    .stTable {
+        border-radius: 10px;
+        overflow: hidden;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -54,7 +59,6 @@ with st.expander("👥 Staffing & Points", expanded=True):
         st.write("Special Settings")
         num_bartenders = st.number_input("Number of Bartenders to Split Solo Bar", min_value=1, step=1, value=2)
         barback_working = st.checkbox("Barback Working? (20% Tipout)")
-        sum_expo_with_bussers = st.checkbox("Sum Expo with Bussers?")
 
 # --- CALCULATION LOGIC ---
 if st.button("Calculate Tipout", type="primary"):
@@ -73,7 +77,9 @@ if st.button("Calculate Tipout", type="primary"):
         server_list = []
         total_server_points = 0.0
         if server_input:
-            for item in server_input.split(','):
+            # Handle comma or newline separation
+            raw_entries = server_input.replace('\n', ',').split(',')
+            for item in raw_entries:
                 if ':' in item:
                     name, pts = item.split(':')
                     pts = float(pts)
@@ -90,23 +96,10 @@ if st.button("Calculate Tipout", type="primary"):
         else:
             point_value = 0
             
-        # 7. Final Amounts
-        server_results = []
-        for s in server_list:
-            final_amt = s['pts'] * point_value
-            server_results.append(f"{s['name']}: ${final_amt:,.2f}")
-        
-        busser_final_each = 0.6 * point_value
-        total_busser_amt = busser_final_each * num_bussers
-        
-        # 8. Expo Final (3% of food cost)
+        # 7. Expo Final (3% of food cost)
         expo_final = round(food_cost * 0.03, 2)
         
-        # If summing expo with bussers
-        if sum_expo_with_bussers:
-            total_busser_amt += expo_final
-        
-        # 9. Bar Pool Logic
+        # 8. Bar Pool Logic
         bar_pool_pre = net_bar_tips + bar_tipout_from_servers
         bar_pool_after_expo = bar_pool_pre - expo_final
         
@@ -117,34 +110,52 @@ if st.button("Calculate Tipout", type="primary"):
         solo_bar_final = bar_pool_after_expo - barback_final
         bartender_each = solo_bar_final / num_bartenders if num_bartenders > 0 else solo_bar_final
 
+        # --- PREPARE DATA FOR TABLE ---
+        table_rows = []
+        
+        # Add Server Rows
+        for s in server_list:
+            final_amt = s['pts'] * point_value
+            table_rows.append({
+                "Role/Person": f"Server: {s['name']}",
+                "Payout": f"${final_amt:,.2f}",
+                "Notes": f"{s['pts']} points @ ${point_value:,.2f}/pt"
+            })
+            
+        # Add Busser Rows
+        if num_bussers > 0:
+            busser_final_each = 0.6 * point_value
+            table_rows.append({
+                "Role/Person": f"Bussers ({num_bussers})",
+                "Payout": f"${busser_final_each:,.2f} each",
+                "Notes": f"Total: ${busser_final_each * num_bussers:,.2f} (0.6 pts each)"
+            })
+            
+        # Add Expo Row
+        table_rows.append({
+            "Role/Person": "Expo Final",
+            "Payout": f"${expo_final:,.2f}",
+            "Notes": "3% of total food cost"
+        })
+        
+        # Add Barback Row
+        if barback_working:
+            table_rows.append({
+                "Role/Person": "Barback Final",
+                "Payout": f"${barback_final:,.2f}",
+                "Notes": "20% deduction from bar pool"
+            })
+            
+        # Add Bartender/Solo Bar Row
+        table_rows.append({
+            "Role/Person": "Solo Bar Total",
+            "Payout": f"${solo_bar_final:,.2f}",
+            "Notes": f"Split: ${bartender_each:,.2f} each ({num_bartenders} bartenders)"
+        })
+
         # --- OUTPUT TABLE ---
         st.markdown("### 📋 Results Summary")
-        
-        data = {
-            "Output": [
-                "Server Final Amt",
-                "Busser Final Amt",
-                "Expo Final",
-                "Barback Final",
-                "Solo Bar Final"
-            ],
-            "Amount": [
-                f"{'; '.join(server_results)} / Total: ${point_value * total_server_points:,.2f}",
-                f"${busser_final_each:,.2f} each / Total: ${total_busser_amt:,.2f}",
-                f"${expo_final:,.2f}",
-                f"${barback_final:,.2f}",
-                f"${solo_bar_final:,.2f} (${bartender_each:,.2f} each)"
-            ],
-            "Notes": [
-                f"Value per point: ${point_value:,.2f}",
-                "0.6 pts each" + (" + Expo" if sum_expo_with_bussers else ""),
-                "3% of food cost",
-                "20% if barback yes",
-                f"Split between {num_bartenders} bartenders"
-            ]
-        }
-        
-        df_results = pd.DataFrame(data)
+        df_results = pd.DataFrame(table_rows)
         st.table(df_results)
 
         # Verification
