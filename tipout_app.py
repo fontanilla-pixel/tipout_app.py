@@ -39,7 +39,7 @@ if st.button("Calculate Tipout"):
             st.error("Total points cannot be zero.")
             st.stop()
 
-        # Core calcs
+        # Core calcs - Server/Busser side
         net_server_tips = non_cash_servers * 0.975
         bar_tip_out = (bev_sales * 0.10) + (wine_sales * 0.02)
         split_total = net_server_tips - bar_tip_out
@@ -60,11 +60,12 @@ if st.button("Calculate Tipout"):
         # Expo
         expo = round(food_cost * 0.03, 2)
 
-        # Bar
+        # Bar side - NOW subtract expo BEFORE barback (per your sheet)
         net_bar = non_cash_bar * 0.975
-        bar_pool = net_bar + bar_tip_out - expo
-        barback_amt = round(bar_pool * 0.20, 2) if barback == "Yes" else 0.0
-        solo_bar = round(bar_pool - barback_amt, 2)
+        bar_pool_before_deductions = net_bar + bar_tip_out
+        bar_pool_after_expo = bar_pool_before_deductions - expo  # <-- Key change: Expo subtracted here
+        barback_amt = round(bar_pool_after_expo * 0.20, 2) if barback == "Yes" else 0.0
+        solo_bar = round(bar_pool_after_expo - barback_amt, 2)  # Final "Solo Bar Final"
 
         if sum_expo_bussers == "Yes":
             total_busser += expo
@@ -83,12 +84,18 @@ if st.button("Calculate Tipout"):
 
         st.markdown(f"**Barback Final**: **${barback_amt:,.2f}**")
 
-        st.markdown(f"**Solo Bar Final** (pre-split): **${solo_bar:,.2f}**")
+        st.markdown(f"**Solo Bar Final** (pre-split for bartenders): **${solo_bar:,.2f}**")
 
-        st.markdown(f"**Verification**: Servers + Bussers = **${total_server_final + total_busser:,.2f}** (should ≈ split total)")
+        st.markdown(f"**Verification**: Servers + Bussers ≈ **${total_server_final + total_busser:,.2f}** (split total)")
+
+        # Optional verification lines matching your sheet style
+        st.markdown("**Bar Pool Breakdown** (for debugging):")
+        st.markdown(f"- Bar tips + tip-out: **${bar_pool_before_deductions:,.2f}**")
+        st.markdown(f"- Minus Expo: **${bar_pool_after_expo:,.2f}**")
+        st.markdown(f"- Minus Barback (if any): **${solo_bar:,.2f}**")
 
     except Exception as e:
         st.error(f"Error: {str(e)}\nCheck input format (points like Name=number, comma separated).")
 
 st.markdown("---")
-st.caption("Built for Le Petit tipout system • 2.5% house • 10% bev + 2% wine • 3% expo • 20% barback")
+st.caption("Le Petit Tipout System • 2.5% house fee • 10% bev + 2% wine to bar • 3% expo from food • 20% barback")
