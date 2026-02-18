@@ -115,7 +115,7 @@ if st.button("Calculate Tipout", type="primary"):
         
         # 5. Per-Point Value
         if total_floor_points > 0:
-            point_value = round(split_total / total_floor_points, 2)
+            point_value = split_total / total_floor_points
         else:
             point_value = 0
             
@@ -128,26 +128,26 @@ if st.button("Calculate Tipout", type="primary"):
         
         barback_final = 0.0
         if barback_working:
-            barback_final = bar_pool_after_expo * 0.20
+            barback_final = round(bar_pool_after_expo * 0.20, 2)
             
-        solo_bar_final = bar_pool_after_expo - barback_final
-        bartender_each = solo_bar_final / num_bartenders if num_bartenders > 0 else solo_bar_final
+        solo_bar_final = round(bar_pool_after_expo - barback_final, 2)
+        bartender_each = round(solo_bar_final / num_bartenders, 2) if num_bartenders > 0 else solo_bar_final
 
         # --- PREPARE DATA FOR TABLE ---
         table_rows = []
         
         # Individual Server Payouts
         for s in final_server_list:
-            final_amt = s['pts'] * point_value
+            final_amt = round(s['pts'] * point_value, 2)
             table_rows.append({
                 "Role/Person": f"Server: {s['name']}",
                 "Payout": f"${final_amt:,.2f}",
-                "Notes": f"{s['pts']} points @ ${point_value:,.2f}/pt"
+                "Notes": f"{s['pts']} points @ ${point_value:,.4f}/pt"
             })
             
         # Head Busser Rows (Individual)
         for hb_name in head_busser_list:
-            head_busser_amt = 0.65 * point_value
+            head_busser_amt = round(0.65 * point_value, 2)
             table_rows.append({
                 "Role/Person": f"Head Busser: {hb_name}",
                 "Payout": f"${head_busser_amt:,.2f}",
@@ -156,11 +156,11 @@ if st.button("Calculate Tipout", type="primary"):
 
         # Standard Busser Row
         if num_bussers > 0:
-            busser_final_each = 0.6 * point_value
+            busser_final_each = round(0.6 * point_value, 2)
             table_rows.append({
                 "Role/Person": f"Bussers ({num_bussers})",
                 "Payout": f"${busser_final_each:,.2f} each",
-                "Notes": f"Total: ${busser_final_each * num_bussers:,.2f} (0.6 pts each)"
+                "Notes": f"Total: ${round(busser_final_each * num_bussers, 2):,.2f} (0.6 pts each)"
             })
             
         # Expo Row
@@ -191,7 +191,7 @@ if st.button("Calculate Tipout", type="primary"):
         st.table(df_results)
 
         # Verification
-        st.info(f"**Floor Pool Stats:** Total Points: {total_floor_points:.2f} | Point Value: ${point_value:,.2f}")
+        st.info(f"**Floor Pool Stats:** Raw Split Total: ${split_total:,.2f} | Total Points: {total_floor_points:.2f}")
 
     except Exception as e:
         st.error(f"Error in calculation. Please check your formatting. Details: {e}")
