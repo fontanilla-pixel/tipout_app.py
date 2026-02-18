@@ -1,13 +1,8 @@
 import streamlit as st
 import pandas as pd
-import math
 
 # Set page config for a premium look
 st.set_page_config(page_title="Le Petit Tip Calculator", page_icon="🍷", layout="centered")
-
-# Helper function to round up to the nearest 0.10
-def round_up_10(amount):
-    return math.ceil(amount * 10) / 10
 
 # Custom CSS for a sophisticated "Le Petit" aesthetic
 st.markdown("""
@@ -125,7 +120,7 @@ if st.button("Calculate Tipout", type="primary"):
             point_value = 0
             
         # 6. Expo Final (3% of food cost)
-        expo_final = round_up_10(food_cost * 0.03)
+        expo_final = round(food_cost * 0.03, 2)
         
         # 7. Bar Pool Logic
         bar_pool_pre = net_bar_tips + bar_tipout_from_servers
@@ -133,46 +128,46 @@ if st.button("Calculate Tipout", type="primary"):
         
         barback_final = 0.0
         if barback_working:
-            barback_final = round_up_10(bar_pool_after_expo * 0.20)
+            barback_final = round(bar_pool_after_expo * 0.20, 2)
             
-        solo_bar_final = round_up_10(bar_pool_after_expo - barback_final)
-        bartender_each = round_up_10(solo_bar_final / num_bartenders) if num_bartenders > 0 else solo_bar_final
+        solo_bar_final = round(bar_pool_after_expo - barback_final, 2)
+        bartender_each = round(solo_bar_final / num_bartenders, 2) if num_bartenders > 0 else solo_bar_final
 
         # --- PREPARE DATA FOR TABLE ---
         table_rows = []
         
         # Individual Server Payouts
         for s in final_server_list:
-            final_amt = round_up_10(s['pts'] * point_value)
+            final_amt = round(s['pts'] * point_value, 2)
             table_rows.append({
                 "Role/Person": f"Server: {s['name']}",
                 "Payout": f"${final_amt:,.2f}",
-                "Notes": f"{s['pts']} points (Rounded Up 10¢)"
+                "Notes": f"{s['pts']} points @ ${point_value:,.4f}/pt"
             })
             
         # Head Busser Rows (Individual)
         for hb_name in head_busser_list:
-            head_busser_amt = round_up_10(0.65 * point_value)
+            head_busser_amt = round(0.65 * point_value, 2)
             table_rows.append({
                 "Role/Person": f"Head Busser: {hb_name}",
                 "Payout": f"${head_busser_amt:,.2f}",
-                "Notes": f"Seniority rate (0.65 pts) Rounded Up"
+                "Notes": f"Seniority rate (0.65 pts)"
             })
 
         # Standard Busser Row
         if num_bussers > 0:
-            busser_final_each = round_up_10(0.6 * point_value)
+            busser_final_each = round(0.6 * point_value, 2)
             table_rows.append({
                 "Role/Person": f"Bussers ({num_bussers})",
                 "Payout": f"${busser_final_each:,.2f} each",
-                "Notes": f"Total: ${busser_final_each * num_bussers:,.2f} (0.6 pts ea) Rounded Up"
+                "Notes": f"Total: ${round(busser_final_each * num_bussers, 2):,.2f} (0.6 pts each)"
             })
             
         # Expo Row
         table_rows.append({
             "Role/Person": "Expo Final",
             "Payout": f"${expo_final:,.2f}",
-            "Notes": "3% of food cost (Rounded Up)"
+            "Notes": "3% of total food cost"
         })
         
         # Barback Row
@@ -180,14 +175,14 @@ if st.button("Calculate Tipout", type="primary"):
             table_rows.append({
                 "Role/Person": "Barback Final",
                 "Payout": f"${barback_final:,.2f}",
-                "Notes": "20% deduction (Rounded Up)"
+                "Notes": "20% deduction from bar pool"
             })
             
         # Bartender Row
         table_rows.append({
             "Role/Person": "Solo Bar Total",
             "Payout": f"${solo_bar_final:,.2f}",
-            "Notes": f"Split: ${bartender_each:,.2f} each (Rounded Up)"
+            "Notes": f"Split: ${bartender_each:,.2f} each ({num_bartenders} bartenders)"
         })
 
         # --- OUTPUT TABLE ---
@@ -196,7 +191,7 @@ if st.button("Calculate Tipout", type="primary"):
         st.table(df_results)
 
         # Verification
-        st.info(f"**Floor Pool Stats:** Raw Split Total: ${split_total:,.2f} | Point Value: ${point_value:,.4f}")
+        st.info(f"**Floor Pool Stats:** Raw Split Total: ${split_total:,.2f} | Total Points: {total_floor_points:.2f}")
 
     except Exception as e:
         st.error(f"Error in calculation. Please check your formatting. Details: {e}")
