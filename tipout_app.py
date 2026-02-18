@@ -1,200 +1,204 @@
 import streamlit as st
 import pandas as pd
 
-# Set page config for a premium look
-st.set_page_config(page_title="Le Petit Tip Calculator", page_icon="🍷", layout="centered")
+# Set page config for a premium, responsive feel
+st.set_page_config(
+    page_title="Le Petit Tip Pro", 
+    page_icon="🍷", 
+    layout="centered",
+    initial_sidebar_state="collapsed"
+)
 
-# Custom CSS for a sophisticated "Le Petit" aesthetic
+# Custom CSS for a sophisticated, mobile-first aesthetic
 st.markdown("""
     <style>
-    .main {
-        background-color: #fcfcfc;
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
+    
+    html, body, [class*="css"] {
+        font-family: 'Inter', sans-serif;
+        background-color: #f8fafc;
     }
-    .stNumberInput, .stTextInput {
-        border-radius: 8px;
-    }
-    .result-card {
-        background-color: #ffffff;
-        padding: 20px;
+    
+    /* Elegant Header */
+    .app-header {
+        text-align: center;
+        padding: 1.5rem 0;
+        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        color: white;
         border-radius: 12px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        border: 1px solid #eee;
-        margin-bottom: 20px;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
     }
-    h1, h2, h3 {
-        color: #2c3e50;
+    
+    .app-header h1 {
+        margin: 0;
+        font-size: 1.8rem;
+        letter-spacing: -0.025em;
     }
-    /* Make the table look cleaner */
-    .stTable {
-        border-radius: 10px;
-        overflow: hidden;
+    
+    /* Modern Input Containers */
+    div[data-testid="stExpander"] {
+        border: none !important;
+        background-color: white !important;
+        border-radius: 12px !important;
+        box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1) !important;
+        margin-bottom: 1rem !important;
+    }
+    
+    /* Button Styling */
+    .stButton > button {
+        width: 100%;
+        background: #f59e0b !important;
+        color: white !important;
+        border: none !important;
+        padding: 0.6rem !important;
+        font-weight: 600 !important;
+        border-radius: 8px !important;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        transition: all 0.2s;
+    }
+    
+    .stButton > button:hover {
+        background: #d97706 !important;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    }
+
+    /* Results Grid Styling */
+    .result-card {
+        background: white;
+        padding: 1.25rem;
+        border-radius: 12px;
+        border-left: 4px solid #f59e0b;
+        margin-bottom: 1rem;
+        box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    }
+    
+    .result-label {
+        color: #64748b;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+    
+    .result-value {
+        color: #0f172a;
+        font-size: 1.25rem;
+        font-weight: 600;
+    }
+    
+    /* Mobile-specific adjustments */
+    @media (max-width: 640px) {
+        .app-header h1 { font-size: 1.5rem; }
+        [data-testid="column"] { width: 100% !important; flex: 1 1 100% !important; }
     }
     </style>
 """, unsafe_allow_html=True)
 
-st.title("🍷 Le Petit Marcel")
-st.subheader("Official Tip Distribution Calculator")
+st.markdown("""
+    <div class="app-header">
+        <h1>🍷 Le Petit Marcel</h1>
+        <p style="margin:0; opacity:0.8; font-size:0.9rem;">Tip Distribution Dashboard</p>
+    </div>
+""", unsafe_allow_html=True)
 
 # --- INPUT SECTION ---
-with st.expander("📊 Sales & Tips Input", expanded=True):
+with st.expander("📊 Shift Financials", expanded=True):
     col1, col2 = st.columns(2)
-    
     with col1:
         server_tips_raw = st.number_input("Server Non-Cash Tips ($)", min_value=0.0, step=0.01, format="%.2f")
-        bev_sales = st.number_input("Bev/Liquor/Soft Drinks Sales ($)", min_value=0.0, step=0.01, format="%.2f")
-        wine_sales = st.number_input("Wine BTG+BTL Sales ($)", min_value=0.0, step=0.01, format="%.2f")
-    
+        bev_sales = st.number_input("Bev/Liquor Sales ($)", min_value=0.0, step=0.01, format="%.2f")
+        wine_sales = st.number_input("Wine Total Sales ($)", min_value=0.0, step=0.01, format="%.2f")
     with col2:
         bar_tips_raw = st.number_input("Bar Non-Cash Tips ($)", min_value=0.0, step=0.01, format="%.2f")
         food_cost = st.number_input("Total Food Cost ($)", min_value=0.0, step=0.01, format="%.2f")
 
-with st.expander("👥 Staffing & Points", expanded=True):
+with st.expander("👥 Staff & Adjustments", expanded=True):
     col3, col4 = st.columns(2)
-    
     with col3:
-        st.write("**Standard Servers (2 Pts Each)**")
-        server_names_raw = st.text_input("Server Names (comma separated)", placeholder="Bryan, Riley, Saige")
-        
-        st.write("**Support Staff**")
-        head_busser_names_raw = st.text_input("Head Busser Names (0.65 Pts each)", placeholder="Virgilio, Name2")
-        num_bussers = st.number_input("Number of Standard Bussers (0.6 Pts Each)", min_value=0, step=1, value=1)
-    
+        server_names_raw = st.text_input("Server Names (Bryan, Riley...)", placeholder="Bryan, Riley, Saige")
+        head_busser_names_raw = st.text_input("Head Busser Names", placeholder="Virgilio")
+        num_bussers = st.number_input("Standard Bussers", min_value=0, step=1, value=1)
     with col4:
-        st.write("**Adjusted Servers (Manual Points)**")
-        adjustment_input = st.text_area("Non-standard Points (e.g., Roxy:1.5)", height=68, placeholder="Roxy:1.5, Sam:1")
-        
-        st.write("**Bar Settings**")
-        num_bartenders = st.number_input("Number of Bartenders", min_value=1, step=1, value=2)
-        barback_working = st.checkbox("Barback Working? (20% Tipout)")
+        adjustment_input = st.text_area("Adjusted Pts (Roxy:1.5)", height=68)
+        num_bartenders = st.number_input("Num. Bartenders", min_value=1, step=1, value=2)
+        barback_working = st.checkbox("Barback Working? (20%)")
 
 # --- CALCULATION LOGIC ---
-if st.button("Calculate Tipout", type="primary"):
+if st.button("Generate Distribution"):
     try:
-        # 1. House Fees (0.975 multiplier for 2.5% fee)
+        # Core math
         net_server_tips = server_tips_raw * 0.975
         net_bar_tips = bar_tips_raw * 0.975
-        
-        # 2. Bar Tip-out from Servers (10% Bev + 2% Wine)
         bar_tipout_from_servers = (bev_sales * 0.10) + (wine_sales * 0.02)
-        
-        # 3. Split Total for Floor Pool
         split_total = net_server_tips - bar_tipout_from_servers
         
-        # 4. Parse Staff
+        # Point System
         final_server_list = []
         total_floor_points = 0.0
         
-        # Handle Standard Servers (2 pts)
         if server_names_raw:
-            standard_names = [name.strip() for name in server_names_raw.split(',') if name.strip()]
-            for name in standard_names:
-                final_server_list.append({'name': name, 'pts': 2.0})
+            for n in [name.strip() for name in server_names_raw.split(',') if name.strip()]:
+                final_server_list.append({'name': n, 'pts': 2.0})
                 total_floor_points += 2.0
                 
-        # Handle Adjusted Servers (Custom pts)
         if adjustment_input:
-            adj_entries = adjustment_input.replace('\n', ',').split(',')
-            for item in adj_entries:
+            for item in adjustment_input.replace('\n', ',').split(','):
                 if ':' in item:
-                    name, pts = item.split(':')
+                    n, pts = item.split(':')
                     pts = float(pts)
-                    final_server_list.append({'name': name.strip(), 'pts': pts})
+                    final_server_list.append({'name': n.strip(), 'pts': pts})
                     total_floor_points += pts
         
-        # Handle Head Bussers (0.65 pts each)
         head_busser_list = []
         if head_busser_names_raw:
-            hb_names = [name.strip() for name in head_busser_names_raw.split(',') if name.strip()]
-            for name in hb_names:
-                head_busser_list.append(name)
+            for n in [name.strip() for name in head_busser_names_raw.split(',') if name.strip()]:
+                head_busser_list.append(n)
                 total_floor_points += 0.65
             
-        # Handle Standard Bussers (0.6 pts each)
-        busser_points_total = num_bussers * 0.6
-        total_floor_points += busser_points_total
+        total_floor_points += (num_bussers * 0.6)
+        point_value = split_total / total_floor_points if total_floor_points > 0 else 0
         
-        # 5. Per-Point Value
-        if total_floor_points > 0:
-            point_value = split_total / total_floor_points
-        else:
-            point_value = 0
-            
-        # 6. Expo Final (3% of food cost)
+        # Bar/Expo
         expo_final = round(food_cost * 0.03, 2)
-        
-        # 7. Bar Pool Logic
         bar_pool_pre = net_bar_tips + bar_tipout_from_servers
         bar_pool_after_expo = bar_pool_pre - expo_final
-        
-        barback_final = 0.0
-        if barback_working:
-            barback_final = round(bar_pool_after_expo * 0.20, 2)
-            
+        barback_final = round(bar_pool_after_expo * 0.20, 2) if barback_working else 0.0
         solo_bar_final = round(bar_pool_after_expo - barback_final, 2)
         bartender_each = round(solo_bar_final / num_bartenders, 2) if num_bartenders > 0 else solo_bar_final
 
-        # --- PREPARE DATA FOR TABLE ---
+        # --- MOBILE FRIENDLY RESULTS ---
+        st.markdown("### 📋 Distribution Results")
+        
+        # Summary Row
+        m1, m2 = st.columns(2)
+        m1.metric("Split Total", f"${split_total:,.2f}")
+        m2.metric("Point Value", f"${point_value:,.2f}")
+        
+        # Detailed Table
         table_rows = []
-        
-        # Individual Server Payouts
         for s in final_server_list:
-            final_amt = round(s['pts'] * point_value, 2)
-            table_rows.append({
-                "Role/Person": f"Server: {s['name']}",
-                "Payout": f"${final_amt:,.2f}",
-                "Notes": f"{s['pts']} points @ ${point_value:,.4f}/pt"
-            })
-            
-        # Head Busser Rows (Individual)
-        for hb_name in head_busser_list:
-            head_busser_amt = round(0.65 * point_value, 2)
-            table_rows.append({
-                "Role/Person": f"Head Busser: {hb_name}",
-                "Payout": f"${head_busser_amt:,.2f}",
-                "Notes": f"Seniority rate (0.65 pts)"
-            })
-
-        # Standard Busser Row
-        if num_bussers > 0:
-            busser_final_each = round(0.6 * point_value, 2)
-            table_rows.append({
-                "Role/Person": f"Bussers ({num_bussers})",
-                "Payout": f"${busser_final_each:,.2f} each",
-                "Notes": f"Total: ${round(busser_final_each * num_bussers, 2):,.2f} (0.6 pts each)"
-            })
-            
-        # Expo Row
-        table_rows.append({
-            "Role/Person": "Expo Final",
-            "Payout": f"${expo_final:,.2f}",
-            "Notes": "3% of total food cost"
-        })
+            table_rows.append({"Staff": f"Server: {s['name']}", "Payout": f"${s['pts'] * point_value:,.2f}", "Detail": f"{s['pts']} pts"})
         
-        # Barback Row
-        if barback_working:
-            table_rows.append({
-                "Role/Person": "Barback Final",
-                "Payout": f"${barback_final:,.2f}",
-                "Notes": "20% deduction from bar pool"
-            })
+        for hb in head_busser_list:
+            table_rows.append({"Staff": f"Head Busser: {hb}", "Payout": f"${0.65 * point_value:,.2f}", "Detail": "0.65 pts"})
+
+        if num_bussers > 0:
+            table_rows.append({"Staff": f"Bussers ({num_bussers})", "Payout": f"${0.6 * point_value:,.2f} ea", "Detail": "0.6 pts"})
             
-        # Bartender Row
-        table_rows.append({
-            "Role/Person": "Solo Bar Total",
-            "Payout": f"${solo_bar_final:,.2f}",
-            "Notes": f"Split: ${bartender_each:,.2f} each ({num_bartenders} bartenders)"
-        })
+        table_rows.append({"Staff": "Expo Final", "Payout": f"${expo_final:,.2f}", "Detail": "3% Food"})
+        
+        if barback_working:
+            table_rows.append({"Staff": "Barback Final", "Payout": f"${barback_final:,.2f}", "Detail": "20% Pool"})
+            
+        table_rows.append({"Staff": "Bartender (Each)", "Payout": f"${bartender_each:,.2f}", "Detail": f"Split {num_bartenders}"})
 
-        # --- OUTPUT TABLE ---
-        st.markdown("### 📋 Results Summary")
-        df_results = pd.DataFrame(table_rows)
-        st.table(df_results)
-
-        # Verification
-        st.info(f"**Floor Pool Stats:** Raw Split Total: ${split_total:,.2f} | Total Points: {total_floor_points:.2f}")
-
+        st.table(pd.DataFrame(table_rows))
+        
     except Exception as e:
-        st.error(f"Error in calculation. Please check your formatting. Details: {e}")
+        st.error(f"Please check formatting: {e}")
 
 st.markdown("---")
-st.caption("Le Petit Marcel Management Tools • Consistency = Professionalism")
+st.caption("Le Petit Marcel Management Console • v2.0")
