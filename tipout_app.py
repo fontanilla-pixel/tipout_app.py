@@ -52,6 +52,7 @@ with st.expander("👥 Staffing & Points", expanded=True):
     
     with col4:
         st.write("Special Settings")
+        num_bartenders = st.number_input("Number of Bartenders to Split Solo Bar", min_value=1, step=1, value=2)
         barback_working = st.checkbox("Barback Working? (20% Tipout)")
         sum_expo_with_bussers = st.checkbox("Sum Expo with Bussers?")
 
@@ -73,10 +74,11 @@ if st.button("Calculate Tipout", type="primary"):
         total_server_points = 0.0
         if server_input:
             for item in server_input.split(','):
-                name, pts = item.split(':')
-                pts = float(pts)
-                server_list.append({'name': name.strip(), 'pts': pts})
-                total_server_points += pts
+                if ':' in item:
+                    name, pts = item.split(':')
+                    pts = float(pts)
+                    server_list.append({'name': name.strip(), 'pts': pts})
+                    total_server_points += pts
         
         # 5. Total Points (0.6 per busser)
         busser_points = num_bussers * 0.6
@@ -113,6 +115,7 @@ if st.button("Calculate Tipout", type="primary"):
             barback_final = bar_pool_after_expo * 0.20
             
         solo_bar_final = bar_pool_after_expo - barback_final
+        bartender_each = solo_bar_final / num_bartenders if num_bartenders > 0 else solo_bar_final
 
         # --- OUTPUT TABLE ---
         st.markdown("### 📋 Results Summary")
@@ -130,14 +133,14 @@ if st.button("Calculate Tipout", type="primary"):
                 f"${busser_final_each:,.2f} each / Total: ${total_busser_amt:,.2f}",
                 f"${expo_final:,.2f}",
                 f"${barback_final:,.2f}",
-                f"${solo_bar_final:,.2f}"
+                f"${solo_bar_final:,.2f} (${bartender_each:,.2f} each)"
             ],
             "Notes": [
                 f"Value per point: ${point_value:,.2f}",
                 "0.6 pts each" + (" + Expo" if sum_expo_with_bussers else ""),
                 "3% of food cost",
                 "20% if barback yes",
-                "After expo & barback"
+                f"Split between {num_bartenders} bartenders"
             ]
         }
         
